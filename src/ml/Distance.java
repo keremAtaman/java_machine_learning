@@ -1,7 +1,7 @@
 package ml;
 
 import java.io.IOException;
-
+//TODO add Bhattacharyya distances
 public class Distance {
 	/**
 	 * Checks if sizes of x and y are valid for distance calculation
@@ -21,6 +21,19 @@ public class Distance {
 			throw new IOException("Length of x and y must match");
 		}
 	}
+	/**
+	 * Minkowski not included due to difficulties it presents
+	 * @author K.Ataman
+	 *
+	 */
+	public enum distanceMetric{
+		EUCLIDIAN,
+		CITY_BLOCK,
+		//MINKOWSKI,
+		SUP,
+		PEARSON_CORRELATION
+	}
+	
 	/**
 	 * Finds the euclidian distance between x and y
 	 * @param x : {double[]} the first element 
@@ -58,7 +71,7 @@ public class Distance {
 		for (int i=0; i < x.length; i++) {
 			result += Math.pow(Math.abs(x[i] - y[i]), power);
 		}
-		return Math.pow(result, 1/power);
+		return Math.pow(result, 1.0/power);
 	}
 	/**
 	 * Finds the sup distance (max distance between features)
@@ -80,5 +93,19 @@ public class Distance {
 			}
 		}
 		return max;
+	}
+	/**
+	 * Based off on pearson correlation coefficient. Can detect dissimilarity, 
+	 * but not the magnitude of differences. This is not a distance metric
+	 * @param x {double []}
+	 * @param y {double []}
+	 * @return
+	 * @throws IOException if lenghts of x and y are erroneous
+	 */
+	public static double pearsonCorrelation(double[] x, double[] y) throws IOException {
+		//error checking
+		errorCheck(x,y);
+
+		return (1- Statistics.pearsonCorrelationCoefficient(x,y) ) / 2;
 	}
 }
