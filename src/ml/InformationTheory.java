@@ -16,6 +16,7 @@ public class InformationTheory {
 	}
 	
 	public static double jointEntropy() {
-		
+		double entropy = 0.0;
+		return entropy;
 	}
 }

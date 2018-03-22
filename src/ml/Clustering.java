@@ -76,20 +76,23 @@ public class Clustering {
 			//first index is clusters, second index is elements
 			List<List<double[]>> rearrangedMembers= new ArrayList<List<double[]>>();
 			List<double[]> clusterMembers = new ArrayList<double[]>();
+			double[] dataHolder = new double[x[0].length];
 			
 			//populate the rearrangedMembers List
 			for(int i=0; i < centers.length; i++) {
 				for (int j = 0; j < x.length; j++) {
 					if(clusterMemberships[j] == i) {
-						clusterMembers.add(x[j]);
+						for (int k = 0; k < dataHolder.length; k++) {
+							dataHolder[k] = x[j][k];
+							//System.out.println(x[j][k]);
+						}
+						clusterMembers.add(dataHolder);
 						//System.out.println(clusterMembers.get(0)[0]);
 					}
 				}
 				rearrangedMembers.add(clusterMembers);
-				//System.out.println(rearrangedMembers.get(0).get(0)[0]);
 				clusterMembers.clear();
 			}
-			System.out.println(rearrangedMembers.size());
 			System.out.println(rearrangedMembers.get(0).size());
 			//calculate within and inter cluster distances for all elements
 			//within cluster score
@@ -101,8 +104,6 @@ public class Clustering {
 					SSW = withinClusterDistance(j, rearrangedMembers.get(i), distanceMetric);
 					SSB = Clustering.ClusterEvaluation.interClusterDistance(i, rearrangedMembers, distanceMetric);
 					score += (SSW - SSB) / Math.max(SSB, SSW);
-					System.out.println(SSW);
-					System.out.println(SSB);
 				}
 			}
 			return score / (double)x.length;
