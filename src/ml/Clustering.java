@@ -60,6 +60,89 @@ public class Clustering {
 		}
 		return clusterMembers;
 	}
+	public static class ClusterEvaluation{
+		/**
+		 * Almost there, but for some reason rearrangedMembers is not filled properly
+		 * @param centers
+		 * @param x
+		 * @param distanceMetric
+		 * @return
+		 * @throws IOException
+		 */
+		public static double silhouetteMethod(double[][] centers, double[][] x, Distance.distanceMetric distanceMetric) throws IOException {
+			double score = 0.0;
+			//Get which cluster each element belongs to
+			int[] clusterMemberships = Clustering.clusterMembership(centers, x, distanceMetric);
+			//first index is clusters, second index is elements
+			List<List<double[]>> rearrangedMembers= new ArrayList<List<double[]>>();
+			List<double[]> clusterMembers = new ArrayList<double[]>();
+			
+			//populate the rearrangedMembers List
+			for(int i=0; i < centers.length; i++) {
+				for (int j = 0; j < x.length; j++) {
+					if(clusterMemberships[j] == i) {
+						clusterMembers.add(x[j]);
+						//System.out.println(clusterMembers.get(0)[0]);
+					}
+				}
+				rearrangedMembers.add(clusterMembers);
+				//System.out.println(rearrangedMembers.get(0).get(0)[0]);
+				clusterMembers.clear();
+			}
+			System.out.println(rearrangedMembers.size());
+			System.out.println(rearrangedMembers.get(0).size());
+			//calculate within and inter cluster distances for all elements
+			//within cluster score
+			double SSW = 0.0;
+			//inter cluster score
+			double SSB = 0.0;
+			for (int i = 0; i < rearrangedMembers.size(); i++) {
+				for (int j = 0; j < rearrangedMembers.get(i).size(); j++) {
+					SSW = withinClusterDistance(j, rearrangedMembers.get(i), distanceMetric);
+					SSB = Clustering.ClusterEvaluation.interClusterDistance(i, rearrangedMembers, distanceMetric);
+					score += (SSW - SSB) / Math.max(SSB, SSW);
+					System.out.println(SSW);
+					System.out.println(SSB);
+				}
+			}
+			return score / (double)x.length;
+		}
+		
+		private static double withinClusterDistance(int elementNumber, List<double[]> clusterMembers, Distance.distanceMetric distanceMetric) throws IOException {
+			double score = 0.0;
+			for(int i = 0; i < clusterMembers.size(); i++) {
+				if(i != elementNumber) {
+					score += Clustering.calculateDistance(clusterMembers.get(elementNumber), clusterMembers.get(i), distanceMetric);
+				}
+			}
+			return score / (double)clusterMembers.size();
+		}
+		
+		private static double interClusterDistance(int clusterNumber, List<List<double[]>> rearrangedMembers, Distance.distanceMetric distanceMetric) throws IOException {
+			double score = 0.0;
+			for (int i = 0; i < rearrangedMembers.size(); i++) {
+				if (i!= clusterNumber) {
+					score+= Clustering.ClusterEvaluation.withinClusterDistance(-1, rearrangedMembers.get(i), distanceMetric);
+				}
+			}
+			return score / (double)rearrangedMembers.size();
+		}
+		
+		public static int elbowMethod(double[] listOfScores) {
+			double[] secondDerivativeList = new double[listOfScores.length];
+			double maxScore = 0.0;
+			int maxIndex = 0;
+			for (int i = 0; i < listOfScores.length - 1; i++) {
+				secondDerivativeList[i] = Math.abs(listOfScores[i+1] + listOfScores[i-1] - 2 * listOfScores[i]);
+				if (secondDerivativeList[i] > maxScore) {
+					maxIndex = i;
+				}
+			}
+			return maxIndex;
+		}
+	}
+	
+	
 	
 	public static int [] clusterMembership(List<double[]> centers, 
 			double x[][], Distance.distanceMetric distanceMetric) throws IOException{
@@ -112,15 +195,18 @@ public class Clustering {
 		}
 		return centers;
 	}
+	
+	
 	/**
 	 * Does knn on a given dataset
 	 * @param k number of clusters
 	 * @param x data to be clustered, where rows are entries and columns are features
+	 * @param initialCenters if not empty, gives the initial centers to be used
 	 * @param distanceMetric distance metric to be used when calculating distance
 	 * @return the centers of each cluster
 	 * @throws IOException
 	 */
-	public static double[][] kMeans(int k, double[][] x, Distance.distanceMetric distanceMetric
+	public static double[][] kMeans(int k, double[][] x, double[][] initialCenters, Distance.distanceMetric distanceMetric
 			) throws IOException {
 		//error checking
 		if (k < 2) {
@@ -133,8 +219,11 @@ public class Clustering {
 			throw new IOException("k has to be less than the number of entries in x");
 		}
 		
-		//holds the centers. Give initial random values to the center coordinates
-		double[][] centers = Clustering.initialCenters(k, x);
+		//holds the centers. Give initial random values to the center coordinates if no default value is given
+		double[][] centers = initialCenters;
+		if (initialCenters == null) {
+			centers = Clustering.initialCenters(k, x);
+		}
 		//holds the centers of last step for comparison
 		double[][] previousCenters = new double[k][x[0].length];
 		
