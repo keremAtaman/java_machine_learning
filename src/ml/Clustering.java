@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+//TODO Create a class for clustering methods, and an enum containing each
+//TODO Add methods to use initialCenters properly
 public class Clustering {
 	
 	/**
@@ -131,13 +133,22 @@ public class Clustering {
 			}
 			return currentScore / (double)rearrangedMembers.size();
 		}
-		
+		/**
+		 * Calculates what is the best number of centers and gives the optimal centers
+		 * @param minK minimum number of clusters
+		 * @param maxK maximum number of clusters
+		 * @param x dataset
+		 * @param distanceMetric
+		 * @return
+		 * @throws IOException
+		 */
 		public static double[][] optimalCenters(int minK, int maxK, double[][] x, Distance.distanceMetric distanceMetric) throws IOException {
+			//TODO: minK can be 1, have multiple clustering methods to be used
 			if (minK >= maxK) {
 				throw new IOException("minK has to be smaller than maxK");
 			}
-			if (minK < 2) {
-				throw new IOException("minK has to be at least 2");
+			if (minK < 1) {
+				throw new IOException("minK has to be at least 1");
 			}
 			int numIterations = maxK - minK;
 			double[] listOfScores = new double[numIterations];
@@ -232,8 +243,8 @@ public class Clustering {
 	public static double[][] kMeans(int k, double[][] x, double[][] initialCenters, Distance.distanceMetric distanceMetric
 			) throws IOException {
 		//error checking
-		if (k < 2) {
-			throw new IOException("k has to be an intager greter than 1");
+		if (k < 1) {
+			throw new IOException("k has to be an intager greter than 0");
 		}
 		if (x.length < 2) {
 			throw new IOException("x has to have at least two entries");
