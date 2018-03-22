@@ -75,25 +75,21 @@ public class Clustering {
 			int[] clusterMemberships = Clustering.clusterMembership(centers, x, distanceMetric);
 			//first index is clusters, second index is elements
 			List<List<double[]>> rearrangedMembers= new ArrayList<List<double[]>>();
-			List<double[]> clusterMembers = new ArrayList<double[]>();
-			double[] dataHolder = new double[x[0].length];
 			
+			
+			//populate rearrangedMembers
 			//populate the rearrangedMembers List
 			for(int i=0; i < centers.length; i++) {
+				List<double[]> clusterMembers = new ArrayList<double[]>();
 				for (int j = 0; j < x.length; j++) {
 					if(clusterMemberships[j] == i) {
-						for (int k = 0; k < dataHolder.length; k++) {
-							dataHolder[k] = x[j][k];
-							//System.out.println(x[j][k]);
-						}
-						clusterMembers.add(dataHolder);
-						//System.out.println(clusterMembers.get(0)[0]);
+						clusterMembers.add(x[j]);
 					}
 				}
 				rearrangedMembers.add(clusterMembers);
-				clusterMembers.clear();
+				//clusterMembers.clear();
 			}
-			System.out.println(rearrangedMembers.get(0).size());
+			//System.out.println(rearrangedMembers.get(0).get(0).length);
 			//calculate within and inter cluster distances for all elements
 			//within cluster score
 			double SSW = 0.0;
@@ -102,8 +98,8 @@ public class Clustering {
 			for (int i = 0; i < rearrangedMembers.size(); i++) {
 				for (int j = 0; j < rearrangedMembers.get(i).size(); j++) {
 					SSW = withinClusterDistance(j, rearrangedMembers.get(i), distanceMetric);
-					SSB = Clustering.ClusterEvaluation.interClusterDistance(i, rearrangedMembers, distanceMetric);
-					score += (SSW - SSB) / Math.max(SSB, SSW);
+					SSB = Clustering.ClusterEvaluation.interClusterDistance(i, j, rearrangedMembers, distanceMetric);
+					score += (SSB - SSW) / Math.max(SSB, SSW);
 				}
 			}
 			return score / (double)x.length;
@@ -119,21 +115,47 @@ public class Clustering {
 			return score / (double)clusterMembers.size();
 		}
 		
-		private static double interClusterDistance(int clusterNumber, List<List<double[]>> rearrangedMembers, Distance.distanceMetric distanceMetric) throws IOException {
+		private static double interClusterDistance(int clusterNumber, int elementNumber, List<List<double[]>> rearrangedMembers, Distance.distanceMetric distanceMetric) throws IOException {
 			double score = 0.0;
+			double currentScore = 0.0;
 			for (int i = 0; i < rearrangedMembers.size(); i++) {
 				if (i!= clusterNumber) {
-					score+= Clustering.ClusterEvaluation.withinClusterDistance(-1, rearrangedMembers.get(i), distanceMetric);
+					for (int j = 0; j < rearrangedMembers.get(i).size(); j++) {
+						score+= Clustering.calculateDistance(rearrangedMembers.get(clusterNumber).get(elementNumber),
+								rearrangedMembers.get(i).get(j), distanceMetric);
+					}
+					score = score / rearrangedMembers.get(i).size();
+					currentScore += score;
+					score = 0.0;
 				}
 			}
-			return score / (double)rearrangedMembers.size();
+			return currentScore / (double)rearrangedMembers.size();
+		}
+		
+		public static double[][] optimalCenters(int minK, int maxK, double[][] x, Distance.distanceMetric distanceMetric) throws IOException {
+			if (minK >= maxK) {
+				throw new IOException("minK has to be smaller than maxK");
+			}
+			if (minK < 2) {
+				throw new IOException("minK has to be at least 2");
+			}
+			int numIterations = maxK - minK;
+			double[] listOfScores = new double[numIterations];
+			List<double[][]> centerList = new ArrayList<double[][]>();
+			for (int i = minK; i < maxK; i++) {
+				double[][] centers = Clustering.kMeans(i, x, null, distanceMetric);
+				centerList.add(centers);
+				listOfScores[i - minK] = Clustering.ClusterEvaluation.silhouetteMethod(centers, x, distanceMetric);
+			}
+			
+			return centerList.get(elbowMethod(listOfScores));
 		}
 		
 		public static int elbowMethod(double[] listOfScores) {
 			double[] secondDerivativeList = new double[listOfScores.length];
 			double maxScore = 0.0;
 			int maxIndex = 0;
-			for (int i = 0; i < listOfScores.length - 1; i++) {
+			for (int i = 1; i < listOfScores.length - 1; i++) {
 				secondDerivativeList[i] = Math.abs(listOfScores[i+1] + listOfScores[i-1] - 2 * listOfScores[i]);
 				if (secondDerivativeList[i] > maxScore) {
 					maxIndex = i;
