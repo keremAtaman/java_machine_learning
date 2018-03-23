@@ -3,5 +3,7 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="C:/Users/K.Ataman/Documents/java/commons-math3-3.6.1-bin/commons-math3-3.6.1/commons-math3-3.6.1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/K.Ataman/Documents/java/commons-csv-1.5-bin/commons-csv-1.5/commons-csv-1.5.jar"/>
+	<classpathentry kind="lib" path="C:/Users/K.Ataman/Documents/java/commons-csv-1.5-bin/commons-csv-1.5/commons-csv-1.5-sources.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
