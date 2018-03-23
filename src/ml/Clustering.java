@@ -9,6 +9,10 @@ import java.util.List;
 //TODO Add methods to use initialCenters properly
 public class Clustering {
 	
+	public enum clusteringMethods{
+		KMEANS
+	}
+	
 	/**
 	 * Calculates distance between x and y using the given distance metric
 	 * @param x
@@ -62,6 +66,10 @@ public class Clustering {
 		}
 		return clusterMembers;
 	}
+	/**
+	 * Used to evaluate the effectiveness of the clustering
+	 *
+	 */
 	public static class ClusterEvaluation{
 		/**
 		 * Almost there, but for some reason rearrangedMembers is not filled properly
