@@ -23,5 +23,7 @@ public class Test {
 		}
 		System.out.println("Here is the Silhouette score:");
 		System.out.println(Clustering.ClusterEvaluation.silhouetteMethod(centers, newX, distanceMetric));
+		System.out.println("Here is the amount of features removed");
+		System.out.println(x[0].length - newX[0].length);
 	}
 }
