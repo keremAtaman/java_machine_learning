@@ -135,4 +135,14 @@ public class Chromosomes {
 		}
 		return x;
 	}
+
+	public static  Object[] chromosomeCreator(int numElements, Object[] possibleValues) {
+		Random rng = new Random();
+		Object[] result = new Object[numElements];
+		for (int i = 0; i < numElements; i++) {
+			result[i] = possibleValues[rng.nextInt(possibleValues.length)];
+			}
+		return result;
+		}
+
 }

@@ -78,13 +78,6 @@ public class InformationTheory {//TODO use pmf instead of element occurences?
 		}
 		return result;
 	}
-	private static int bool2Int(boolean[] boolArray) {
-		int result = 0;
-		for (int i = 0; i < 4; ++i) {
-	    	if (boolArray[i]) result |= (1 << i);
-		}
-		return result;
-	}
 	
 	private static double[] featureExtractor(double[][] x, int numFeature) {
 		double[] result = new double[x.length];

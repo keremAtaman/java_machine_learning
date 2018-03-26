@@ -19,7 +19,7 @@ public class CSVUtilities {
 	 * Reads a csv whose first row is headers
 	 * @param SAMPLE_CSV_FILE_PATH
 	 * @param num_columns
-	 * @param num_rows
+	 * @param num_rows number of rows AFTER header
 	 * @param column_names
 	 * @return
 	 * @throws IOException
@@ -91,7 +91,7 @@ public class CSVUtilities {
 	/**
 	 Writes a csv file
 	 @param {String} location - the folder directory in which the data will be saved
-	 @param {String} name - name of the csv file that will be saved
+	 @param {String} name - name of the csv file that will be saved. Include '.csv' in the name
 	 @param {String[]} column_names - Header names
 	 @param {String[][]} data - the data matrix that will be converted to csv
 	 @return {csv} - a csv file at the designated location
@@ -132,7 +132,7 @@ public class CSVUtilities {
 	/**
 	 Writes a csv file
 	 @param {String} location - the folder directory in which the data will be saved
-	 @param {String} name - name of the csv file that will be saved
+	 @param {String} name - name of the csv file that will be saved. Include '.csv' in the name
 	 @param {String[]} column_names - Header names
 	 @param {String[][]} data - the data matrix that will be converted to csv
 	 @return {csv} - a csv file at the designated location
@@ -171,7 +171,7 @@ public class CSVUtilities {
 	/**
 	 Writes a csv file
 	 @param {String} location - the folder directory in which the data will be saved
-	 @param {String} name - name of the csv file that will be saved
+	 @param {String} name - name of the csv file that will be saved. Include '.csv' in the name
 	 @param {String[]} column_names - Header names
 	 @param {double[][]} data - the data matrix that will be converted to csv
 	 @return {csv} - a csv file at the designated location
@@ -200,9 +200,9 @@ public class CSVUtilities {
        csvFilePrinter.printRecord(header);
 		
 		//Write a new student object list to the CSV file
-		for (int i = 0; i < data[0].length; i++) {
+		for (int i = 0; i < data.length; i++) {
 			List line = new ArrayList();
-			for (int j=0; j < data[1].length; j++) {
+			for (int j=0; j < data[0].length; j++) {
 				line.add(data[i][j]);
 			}
            csvFilePrinter.printRecord(line);
