@@ -14,28 +14,6 @@ public class Clustering {
 	}
 	
 	/**
-	 * Calculates distance between x and y using the given distance metric
-	 * @param x
-	 * @param y
-	 * @param distanceMetric
-	 * @return
-	 * @throws IOException
-	 */
-	private static double calculateDistance(double[] x, double[] y, Distance.distanceMetric distanceMetric
-			) throws IOException {
-		switch(distanceMetric) {
-			case EUCLIDIAN:
-				return Distance.euclidian(x, y);
-			case CITY_BLOCK:
-				return Distance.cityBlock(x, y);
-			case SUP:
-				return Distance.sup(x, y);
-			case PEARSON_CORRELATION:
-				return Distance.pearsonCorrelation(x, y);
-		}
-		return 0;
-	}
-	/**
 	 * calculates which cluster each element of x belongs to
 	 * @param centers {double[numClusters][numFeatures]} a matrix that stores the centers of each cluster
 	 * @param x {double[numElements][numFeatures]} the data that got clustered
@@ -45,7 +23,7 @@ public class Clustering {
 	 * @throws IOException
 	 */
 	public static int [] clusterMembership(double[][] centers, 
-			double x[][], Distance.distanceMetric distanceMetric) throws IOException{
+			double x[][], Distance.distanceMetric distanceMetric){
 		int [] clusterMembers = new int[x.length];
 		double distance;
 		double minDistance = 0.0;
@@ -53,7 +31,7 @@ public class Clustering {
 		// calculate which cluster each element belongs to
 		for (int i = 0; i < x.length ; i++) {
 			for (int j = 0; j < centers.length; j++) {
-				distance = Clustering.calculateDistance(x[i], centers[j], distanceMetric);
+				distance = Distance.calculateDistance(x[i], centers[j], distanceMetric);
 				if (j==0) {
 					minDistance = distance;
 					closestCluster = 0;
@@ -72,14 +50,13 @@ public class Clustering {
 	 */
 	public static class ClusterEvaluation{
 		/**
-		 * Almost there, but for some reason rearrangedMembers is not filled properly
 		 * @param centers
 		 * @param x
 		 * @param distanceMetric
 		 * @return
 		 * @throws IOException
 		 */
-		public static double silhouetteMethod(double[][] centers, double[][] x, Distance.distanceMetric distanceMetric) throws IOException {
+		public static double silhouetteMethod(double[][] centers, double[][] x, Distance.distanceMetric distanceMetric){
 			double score = 0.0;
 			//Get which cluster each element belongs to
 			int[] clusterMemberships = Clustering.clusterMembership(centers, x, distanceMetric);
@@ -115,23 +92,23 @@ public class Clustering {
 			return score / (double)x.length;
 		}
 		
-		private static double withinClusterDistance(int elementNumber, List<double[]> clusterMembers, Distance.distanceMetric distanceMetric) throws IOException {
+		private static double withinClusterDistance(int elementNumber, List<double[]> clusterMembers, Distance.distanceMetric distanceMetric){
 			double score = 0.0;
 			for(int i = 0; i < clusterMembers.size(); i++) {
 				if(i != elementNumber) {
-					score += Clustering.calculateDistance(clusterMembers.get(elementNumber), clusterMembers.get(i), distanceMetric);
+					score += Distance.calculateDistance(clusterMembers.get(elementNumber), clusterMembers.get(i), distanceMetric);
 				}
 			}
 			return score / (double)clusterMembers.size();
 		}
 		
-		private static double interClusterDistance(int clusterNumber, int elementNumber, List<List<double[]>> rearrangedMembers, Distance.distanceMetric distanceMetric) throws IOException {
+		private static double interClusterDistance(int clusterNumber, int elementNumber, List<List<double[]>> rearrangedMembers, Distance.distanceMetric distanceMetric){
 			double score = 0.0;
 			double currentScore = 0.0;
 			for (int i = 0; i < rearrangedMembers.size(); i++) {
 				if (i!= clusterNumber) {
 					for (int j = 0; j < rearrangedMembers.get(i).size(); j++) {
-						score+= Clustering.calculateDistance(rearrangedMembers.get(clusterNumber).get(elementNumber),
+						score+= Distance.calculateDistance(rearrangedMembers.get(clusterNumber).get(elementNumber),
 								rearrangedMembers.get(i).get(j), distanceMetric);
 					}
 					score = score / rearrangedMembers.get(i).size();
@@ -150,13 +127,13 @@ public class Clustering {
 		 * @return
 		 * @throws IOException
 		 */
-		public static double[][] optimalCenters(int minK, int maxK, double[][] x, Distance.distanceMetric distanceMetric) throws IOException {
+		public static double[][] optimalCenters(int minK, int maxK, double[][] x, Distance.distanceMetric distanceMetric){
 			//TODO: minK can be 1, have multiple clustering methods to be used
 			if (minK >= maxK) {
-				throw new IOException("minK has to be smaller than maxK");
+				throw new IllegalArgumentException("minK has to be smaller than maxK");
 			}
 			if (minK < 1) {
-				throw new IOException("minK has to be at least 1");
+				throw new IllegalArgumentException("minK has to be at least 1");
 			}
 			int numIterations = maxK - minK;
 			double[] listOfScores = new double[numIterations];
@@ -182,12 +159,88 @@ public class Clustering {
 			}
 			return maxIndex;
 		}
+		
+		public static double[][] removeFeature(double[][] x, boolean [] featuresToRemove){
+			int numElementsToRemove = 0;
+			for (int i = 0; i < featuresToRemove.length; i++) {
+				if (featuresToRemove[i] == true) {
+					numElementsToRemove++;
+				}
+			}
+			double[][] newX = new double[x.length][x[0].length - numElementsToRemove];
+			int columnsToSkip = 0;
+			for (int j = 0; j < featuresToRemove.length; j++) {
+				//If this is a removable feature, skip iterating over it
+				if (featuresToRemove[j] == true) {
+					columnsToSkip++;
+				//this feature needs to be populated
+				}else {
+					for (int i = 0; i < x.length; i++) {
+						newX[i][j - columnsToSkip] = x[i][j];
+					}
+				}
+			}
+			return newX;
+		}
+
+		/**
+		 * Does the whole optimize clusters -> feature selection -> optimize clusters... stuff
+		 * TODO: FIX X ISSUE
+		 * @param x
+		 * @param distanceMetric
+		 * @return A 3D array where [0][][] is the centers and [1][][] is the new x array
+		 * @throws IOException
+		 */
+		public static double[][][] clusteringProcess(
+				double[][] x, Distance.distanceMetric distanceMetric){
+			int numElementsToRemove = 1;
+			//keep iterating until there are no more elements to remove
+			List<double[]> xHolder = new ArrayList<double[]>();
+			for (int i = 0; i < x.length; i++) {
+				xHolder.add(x[i]);
+			}
+			while(true) {
+				//create and populate x2
+				double[][] x2 = new double[xHolder.size()][xHolder.get(0).length];
+				for (int i = 0; i < x2.length; i++) {
+					for (int j = 0; j < x2[0].length; j++) {
+						x2[i][j] = xHolder.get(i)[j];
+					}
+				}
+				
+				//calculate newX, which comes from operating on x2
+				double [][] centers = Clustering.ClusterEvaluation.optimalCenters(
+						2, x2.length, x2, distanceMetric);
+				//check if any elements need to be removed
+				boolean[] featuresToRemove = InformationTheory.mRMR(x2, centers, distanceMetric);
+				numElementsToRemove = 0;
+				for (int i = 0; i < featuresToRemove.length; i++) {
+					if (featuresToRemove[i] == true) {
+						numElementsToRemove++;
+					}
+				}
+				double[][] newX = Clustering.ClusterEvaluation.removeFeature(x2, featuresToRemove);
+				
+				//Hold newX in memory using xHolder list, which will later become x2
+				for (int i = 0; i < newX.length; i++) {
+					xHolder.set(i, newX[i]);
+				}
+				//we removed no elements, meaning we reached optimal condition OR there is one feature remaining
+				if (numElementsToRemove == 0) {
+					double[][][] result = new double [2][newX.length + centers.length][centers[0].length];
+					result[0] = centers;
+					result[1] = newX;
+					return result;
+				}
+			}
+			
+		}
 	}
 	
 	
 	
 	public static int [] clusterMembership(List<double[]> centers, 
-			double x[][], Distance.distanceMetric distanceMetric) throws IOException{
+			double x[][], Distance.distanceMetric distanceMetric){
 		int [] clusterMembers = new int[x.length];
 		double distance;
 		double minDistance = 0.0;
@@ -195,7 +248,7 @@ public class Clustering {
 		// calculate which cluster each element belongs to
 		for (int i = 0; i < x.length ; i++) {
 			for (int j = 0; j < centers.size(); j++) {
-				distance = Clustering.calculateDistance(x[i], centers.get(j), distanceMetric);
+				distance = Distance.calculateDistance(x[i], centers.get(j), distanceMetric);
 				if (j==0) {
 					minDistance = distance;
 					closestCluster = 0;
@@ -249,16 +302,16 @@ public class Clustering {
 	 * @throws IOException
 	 */
 	public static double[][] kMeans(int k, double[][] x, double[][] initialCenters, Distance.distanceMetric distanceMetric
-			) throws IOException {
+			){
 		//error checking
 		if (k < 1) {
-			throw new IOException("k has to be an intager greter than 0");
+			throw new IllegalArgumentException("k has to be an intager greter than 0");
 		}
 		if (x.length < 2) {
-			throw new IOException("x has to have at least two entries");
+			throw new IllegalArgumentException("x has to have at least two entries");
 		}
 		if (k >= x.length) {
-			throw new IOException("k has to be less than the number of entries in x");
+			throw new IllegalArgumentException("k has to be less than the number of entries in x");
 		}
 		
 		//holds the centers. Give initial random values to the center coordinates if no default value is given
@@ -291,7 +344,7 @@ public class Clustering {
 			// calculate which cluster each element belongs to
 			for (int i = 0; i < x.length ; i++) {
 				for (int j = 0; j < k; j++) {
-					distance = Clustering.calculateDistance(x[i], centers[j], distanceMetric);
+					distance = Distance.calculateDistance(x[i], centers[j], distanceMetric);
 					if (j==0) {
 						minDistance = distance;
 						closestCluster = 0;
@@ -340,17 +393,17 @@ public class Clustering {
 	 */
 	public static double[][] ISODATA(int k, int minElements, int maxNumberOfIterations,
 			double maxVariance, double minDistance,
-			double[][] x, Distance.distanceMetric distanceMetric) throws IOException{
+			double[][] x, Distance.distanceMetric distanceMetric){
 		
 		//error checking
 		if (k < 2) {
-			throw new IOException("k has to be an intager greter than 1");
+			throw new IllegalArgumentException("k has to be an intager greter than 1");
 		}
 		if (x.length < 2) {
-			throw new IOException("x has to have at least two entries");
+			throw new IllegalArgumentException("x has to have at least two entries");
 		}
 		if (k >= x.length) {
-			throw new IOException("k has to be less than the number of entries in x");
+			throw new IllegalArgumentException("k has to be less than the number of entries in x");
 		}
 		
 		

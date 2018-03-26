@@ -9,12 +9,10 @@ public class Chromosomes {
 	
 	/**
 	 * Different methods for cross over
-	 * @author K.Ataman
-	 *
 	 */
 	public enum crossoverMethod{
 		/**
-		 * At the crossover point, if mutation rate check is passed, flip the chromosomes of parents
+		 * At the crossover point, if crossover rate check is passed, flip the chromosomes of parents
 		 */
 		CROSSOVER_POINT
 	}

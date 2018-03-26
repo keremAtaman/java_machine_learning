@@ -25,16 +25,16 @@ public class Statistics {
 	public static double stdev(double[] x) {
 		return Math.sqrt(variance(x));
 	}
-	public static double covariance(double[] x, double[] y) throws IOException {
+	public static double covariance(double[] x, double[] y){
 		//error checking
 		if (x.length==0) {
-			throw new IOException("x is empty");
+			throw new IllegalArgumentException("x is empty");
 		}
 		if (y.length==0) {
-			throw new IOException("y is empty");
+			throw new IllegalArgumentException("y is empty");
 		}
 		if (x.length!=y.length) {
-			throw new IOException("Length of x and y must match");
+			throw new IllegalArgumentException("Length of x and y must match");
 		}
 		
 		double meanX = mean(x);
@@ -45,7 +45,7 @@ public class Statistics {
 		}
 		return result / x.length;
 	}
-	public static double[][] covarianceMatrix(double[][]x) throws IOException {
+	public static double[][] covarianceMatrix(double[][]x){
 		double[][] result = new double[x.length][x[0].length];
 		for (int i = 0; i < x.length; i++) {
 			for (int j = 0; j < x[0].length; j++) {
@@ -54,7 +54,7 @@ public class Statistics {
 		}
 		return result;
 	}
-	public static double pearsonCorrelationCoefficient(double[] x, double [] y) throws IOException {
+	public static double pearsonCorrelationCoefficient(double[] x, double [] y){
 		return Statistics.covariance(x, y) / (Statistics.stdev(x) * Statistics.stdev(y));
 	}
 }

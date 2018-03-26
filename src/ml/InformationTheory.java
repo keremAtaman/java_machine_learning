@@ -1,7 +1,5 @@
 package ml;
 
-import java.io.IOException;
-
 public class InformationTheory {//TODO use pmf instead of element occurences?
 	public static double entropy(double[] pmf) {
 		double entropy = 0.0;
@@ -25,7 +23,7 @@ public class InformationTheory {//TODO use pmf instead of element occurences?
 		return entropy(x_alone) + entropy(y) - jointEntropy(x);
 	}
 	
-	public static double[][] featureClusters(double[] feature, Distance.distanceMetric distanceMetric) throws IOException{
+	public static double[][] featureClusters(double[] feature, Distance.distanceMetric distanceMetric){
 		double[][] x = new double[feature.length][1];
 		for (int i = 0; i < feature.length; i++) {
 			x[i][0] = feature[i];
@@ -34,7 +32,7 @@ public class InformationTheory {//TODO use pmf instead of element occurences?
 				2, x.length, x, distanceMetric);
 	}
 	
-	public static double[] featurePmf(double[][] featureCenters, double[] feature, Distance.distanceMetric distanceMetric) throws IOException {
+	public static double[] featurePmf(double[][] featureCenters, double[] feature, Distance.distanceMetric distanceMetric){
 		double[][] x = new double[feature.length][1];
 		double[] pmf = new double[featureCenters.length];
 		for (int i = 0; i < feature.length; i++) {
@@ -59,7 +57,7 @@ public class InformationTheory {//TODO use pmf instead of element occurences?
 		return clusterPmf;
 	}
 	
-	public static double[][] jointPmf(double[][] centers, double[][] featureCenters, double[] feature, int[] memberships, Distance.distanceMetric distanceMetric) throws IOException{
+	public static double[][] jointPmf(double[][] centers, double[][] featureCenters, double[] feature, int[] memberships, Distance.distanceMetric distanceMetric){
 		double[] clusterPmf = clusterPmf(memberships, centers.length);
 		double[] featurePmf = featurePmf(featureCenters, feature, distanceMetric);
 		
@@ -96,7 +94,7 @@ public class InformationTheory {//TODO use pmf instead of element occurences?
 		return result;
 	}
 	
-	private static double mRMRHelper(double[][] x, double[][] centers, Distance.distanceMetric distanceMetric) throws IOException {
+	private static double mRMRHelper(double[][] x, double[][] centers, Distance.distanceMetric distanceMetric){
 		//get stuff inside max bracket
 		double sum = 0.0;
 		double sum2 = 0.0;
@@ -117,7 +115,7 @@ public class InformationTheory {//TODO use pmf instead of element occurences?
 		return sum / (double) x[0].length - sum2 / (double) Math.pow(x[0].length, 2);
 	}
 
-	public static boolean[] mRMR(double[][] x, double[][] centers, Distance.distanceMetric distanceMetric) throws IOException {
+	public static boolean[] mRMR(double[][] x, double[][] centers, Distance.distanceMetric distanceMetric){
 		boolean[] featuresToRemove = int2Bool(0, x[0].length);
 		boolean[] bestFeaturesToRemove = new boolean[x[0].length];
 		int counter = 0;
