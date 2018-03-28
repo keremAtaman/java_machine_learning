@@ -14,6 +14,7 @@ public class Examples {
 				chromosome[i] = (boolean) temp_chromosome[i];
 			}
 			
+			
 		}
 		
 		private int [][] createMaze(){
