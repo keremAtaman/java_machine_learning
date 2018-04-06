@@ -104,19 +104,15 @@ public class Clustering {
 		
 		private static double interClusterDistance(int clusterNumber, int elementNumber, List<List<double[]>> rearrangedMembers, Distance.distanceMetric distanceMetric){
 			double score = 0.0;
-			double currentScore = 0.0;
 			for (int i = 0; i < rearrangedMembers.size(); i++) {
 				if (i!= clusterNumber) {
 					for (int j = 0; j < rearrangedMembers.get(i).size(); j++) {
 						score+= Distance.calculateDistance(rearrangedMembers.get(clusterNumber).get(elementNumber),
 								rearrangedMembers.get(i).get(j), distanceMetric);
 					}
-					score = score / rearrangedMembers.get(i).size();
-					currentScore += score;
-					score = 0.0;
 				}
 			}
-			return currentScore / (double)rearrangedMembers.size();
+			return score / (double)rearrangedMembers.size();
 		}
 		/**
 		 * Calculates what is the best number of centers and gives the optimal centers
@@ -193,7 +189,7 @@ public class Clustering {
 		 */
 		public static double[][][] clusteringProcess(
 				double[][] x, Distance.distanceMetric distanceMetric){
-			int numElementsToRemove = 1;
+			int numElementsToRemove = 0;
 			//keep iterating until there are no more elements to remove
 			List<double[]> xHolder = new ArrayList<double[]>();
 			for (int i = 0; i < x.length; i++) {

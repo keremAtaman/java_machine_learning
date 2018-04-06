@@ -1,7 +1,7 @@
 package ml;
 
 import java.io.IOException;
-//TODO add Bhattacharyya distances
+//TODO add Bhattacharyya and mahanabolis distances
 public class Distance {
 	
 	
@@ -32,6 +32,7 @@ public class Distance {
 		EUCLIDIAN,
 		CITY_BLOCK,
 		//MINKOWSKI,
+		//Mahanabolis
 		SUP,
 		PEARSON_CORRELATION
 	}

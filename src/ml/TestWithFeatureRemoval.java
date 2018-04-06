@@ -1,13 +1,14 @@
 package ml;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
-public class Test {
-	public static final void main(String[] args) throws IOException{
+public class TestWithFeatureRemoval {
+
+	public static void main(String[] args) throws IOException {
 		//TODO: Fix all features being removed AND identify the names of features being removed
 		//TODO: +-1 k using last center values to start
+		//TODO: mRMRHelper returns NaN : go over every damn info theory section
+		//TODO: Max iterations
 		String location = 
 				"C:/Users/K.Ataman/Dropbox (TTS)/TTS Development/Machine Learning/Cpty POC/QT Mar 20";
 		String[] header = {"NUM_CCY_TRADED","AVG_TRADE_SIZE" ,"AVG_TRADE_VOLUME_MNTHLY",
@@ -30,10 +31,10 @@ public class Test {
 		int maxIterations = 300;
 		
 		while(score < minScore) {
-			double [][] centers = Clustering.ClusterEvaluation.optimalCenters(
-					2, x.length, x, distanceMetric);
-			int[] clusterMembership = Clustering.clusterMembership(centers, x, distanceMetric);
-			double[][] newX = x;
+			double[][][] result = Clustering.ClusterEvaluation.clusteringProcess(x, distanceMetric);
+			double [][] centers = result[0];
+			double[][] newX = result[1];
+			int[] clusterMembership = Clustering.clusterMembership(centers, newX, distanceMetric);
 			
 			score = Clustering.ClusterEvaluation.silhouetteMethod(centers, newX, distanceMetric);
 			//we have achieved a good score, do the bookkeeping
@@ -58,9 +59,6 @@ public class Test {
 				CSVUtilities.csv_writer_with_header(location, "/cluster_details.csv",headers ,centers);
 			}
 		}
-		
-		
-		
-		
 	}
+
 }

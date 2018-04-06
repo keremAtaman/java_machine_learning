@@ -10,11 +10,17 @@ public class InformationTheory {//TODO use pmf instead of element occurences?
 		}
 		return entropy;
 	}
-	
-	public static double jointEntropy(double[][] pmf) {
+	/**
+	 * This is for 2 variables (namely x and y for explanation) only
+	 * @param jointPmf row are x values, cols are y values
+	 * @return
+	 */
+	public static double jointEntropy(double[][] jointPmf) {
 		double jointEntropy = 0.0;
-		for (int i = 0; i < pmf.length; i++) {
-			jointEntropy += entropy(pmf[i]);
+		for (int i = 0; i < jointPmf.length; i++) {
+			for (int j = 0; j < jointPmf[0].length; j++) {
+				jointEntropy -= jointPmf[i][j] * Math.log(jointPmf[i][j]);
+			}
 		}
 		return jointEntropy;
 	}
@@ -56,7 +62,7 @@ public class InformationTheory {//TODO use pmf instead of element occurences?
 		}
 		return clusterPmf;
 	}
-	
+	//TODO: Currently this is only for cluster and feature, generalize this!!!
 	public static double[][] jointPmf(double[][] centers, double[][] featureCenters, double[] feature, int[] memberships, Distance.distanceMetric distanceMetric){
 		double[] clusterPmf = clusterPmf(memberships, centers.length);
 		double[] featurePmf = featurePmf(featureCenters, feature, distanceMetric);
@@ -97,7 +103,7 @@ public class InformationTheory {//TODO use pmf instead of element occurences?
 		double[] clusterPmf = InformationTheory.clusterPmf(memberships, centers.length);
 			
 		for (int i=0; i < x[0].length; i++) {
-			featureArray = featureExtractor(x, i);
+			featureArray = featurePmf(centers, featureExtractor(x, i),distanceMetric);
 			sum += InformationTheory.mutualInformation(featureArray, clusterPmf, x);
 			
 			for (int j = 0; j < x[0].length; j++) {
@@ -153,11 +159,15 @@ public class InformationTheory {//TODO use pmf instead of element occurences?
 			
 			
 			score = InformationTheory.mRMRHelper(newX, newCenters, distanceMetric);
+			//if score is NaN
+			if (Double.isNaN(score)) {
+				throw new ArithmeticException("score is NaN");
+			}
 			if(score > max) {
 				bestFeaturesToRemove = featuresToRemove;
 				max = score;
 			}
 		}
-		return featuresToRemove;
+		return bestFeaturesToRemove;
 	}
 }
