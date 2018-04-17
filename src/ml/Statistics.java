@@ -1,6 +1,9 @@
 package ml;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 /**
  * Contains basic statistical methods like variance
  * @author K.Ataman
@@ -86,20 +89,31 @@ public class Statistics {
 	/**
 	 * @param occurences format is [entry][variable]. So occurences[2][3] is the 3rd entry's 4th
 	 * feature value
-	 * @param numDistinctElements the ith element of this is the number of unique values 
-	 * ith variable can take
-	 * @return
+	 * @return a map where int[] is the elements' features' values, and the entry is the probability
+	 * of that feature happening
 	 */
-	public static double[][] jointPmf(int[][] occurences, int [] numDistinctElements){
-		int numRows = 0;
-		for (int i = 0; i < numDistinctElements.length; i++) {
-			numRows += numDistinctElements[i];
-		}
-		double[][] result = new double[numRows][numDistinctElements.length - 1];
+	public static Map<int[], Double> jointPmf(int[][] occurences){
+		
+		//create and populate the instance array
+		Map<int[], Double> pmf = new HashMap<int[], Double>();
+		int[] key = new int[occurences[0].length];
+		boolean keyFound = false;
 		for (int i = 0; i < occurences.length; i++) {
-			for (int j = 0; j < occurences[0].length; j++) {
-				result[][] = occurences[i][j]
+			key = occurences[i];
+			//might need .replace
+			keyFound = pmf.containsKey(key);
+			if (keyFound == true) {
+				//the entry exists
+				pmf.replace(key, pmf.get(key) + 1);
+			}else {
+				pmf.put(key, 1.0);
 			}
 		}
+		
+		//normalize
+		for (Entry<int[], Double> entry: pmf.entrySet()) {
+			entry.setValue((double)entry.getValue() / (double)occurences.length);
+		}
+		return pmf;
 	}
 }

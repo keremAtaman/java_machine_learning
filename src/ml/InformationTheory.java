@@ -1,5 +1,10 @@
 package ml;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
 public class InformationTheory {//TODO use pmf instead of element occurences?
 	public static double entropy(double[] pmf) {
 		double entropy = 0.0;
@@ -19,14 +24,27 @@ public class InformationTheory {//TODO use pmf instead of element occurences?
 		double jointEntropy = 0.0;
 		for (int i = 0; i < jointPmf.length; i++) {
 			for (int j = 0; j < jointPmf[0].length; j++) {
-				jointEntropy -= jointPmf[i][j] * Math.log(jointPmf[i][j]);
+				if(jointPmf[i][j] != 0) {
+					jointEntropy -= jointPmf[i][j] * Math.log(jointPmf[i][j]);
+				}
 			}
+		}
+		return jointEntropy;
+	}
+	public static double jointEntropy(Map<int[], Double> jointPmf) {
+		double jointEntropy = 0.0;
+		for (Entry<int[], Double> entry: jointPmf.entrySet()) {
+			jointEntropy -= entry.getValue() * Math.log(entry.getValue());
 		}
 		return jointEntropy;
 	}
 	
 	public static double mutualInformation(double[] x_alone, double[] y, double[][] x) {
 		return entropy(x_alone) + entropy(y) - jointEntropy(x);
+	}
+	
+	public static double mutualInformation(double[] x, double[] y, Map<int[], Double> jointPmf) {
+		return entropy(x) + entropy(y) - jointEntropy(jointPmf);
 	}
 	
 	public static double[][] featureClusters(double[] feature, Distance.distanceMetric distanceMetric){
@@ -62,20 +80,7 @@ public class InformationTheory {//TODO use pmf instead of element occurences?
 		}
 		return clusterPmf;
 	}
-	//TODO: Currently this is only for cluster and feature, generalize this!!!
-	public static double[][] jointPmf(double[][] centers, double[][] featureCenters, double[] feature, int[] memberships, Distance.distanceMetric distanceMetric){
-		double[] clusterPmf = clusterPmf(memberships, centers.length);
-		double[] featurePmf = featurePmf(featureCenters, feature, distanceMetric);
-		
-		//P(x|y) = P(x,y) / P(y), x and y are independent
-		double[][] jointPmf = new double[clusterPmf.length][featurePmf.length];
-		for (int i = 0; i < clusterPmf.length; i++) {
-			for (int j = 0; j < featurePmf.length; j++) {
-				jointPmf[i][j] = clusterPmf[i] * featurePmf[j] / featurePmf[j];
-			}
-		}
-		return jointPmf;
-	}
+	
 	
 	private static boolean[] int2Bool(int b, int size) {
 	    boolean [] result = new boolean[size];
@@ -93,22 +98,85 @@ public class InformationTheory {//TODO use pmf instead of element occurences?
 		return result;
 	}
 	
+	private static double[] jointPmf(int[] memberships, int[] featureMemberships) {
+		double[][] placeholder = new double[memberships.length][featureMemberships.length];
+		int counter = 0;
+		for (int i = 0; i < memberships.length; i++) {
+			for (int j = 0; j < featureMemberships.length; j++) {
+				placeholder[memberships[i]][featureMemberships[j]]+= 1;
+				counter ++;
+			}
+		}
+		double[] result = new double[memberships.length * featureMemberships.length];
+		for (int i = 0; i < memberships.length; i++) {
+			for (int j = 0; j < featureMemberships.length; j++) {
+				result[featureMemberships.length * i + j] = (double) (placeholder[i][j] / counter);
+			}
+		}
+		return result;
+	}
+	
 	private static double mRMRHelper(double[][] x, double[][] centers, Distance.distanceMetric distanceMetric){
-		//get stuff inside max bracket
+		//gets the stuff inside max bracket
+		
+		int[] memberships = Clustering.clusterMembership(centers, x, distanceMetric);
+		//Calculate Entropy(Clusters)
+		double clusterEntropy = InformationTheory.entropy(
+				InformationTheory.clusterPmf(memberships, centers.length));
+		
+		//To calculate Entropy(Features), find the feature pmfs. 
+		
+		//featurePmf[i] is the ith feature's pmf
+		List<double[]> featurePmfList = new ArrayList<double[]>();
+		List<double[][]>featureCentersList = new ArrayList<double[][]>();
+		double[] featureEntropyArray = new double[x[0].length];
+		double[][] featureExtract = new double[x.length][1];
+		double [] placeholder = new double[x.length];
+		for (int i = 0; i < x[0].length; i++) {
+			placeholder = InformationTheory.featureExtractor(x, i);
+			for (int k = 0; k < placeholder.length; k++) {
+				featureExtract[k][0] = placeholder[k];
+			}
+			//find the centers for feature i
+			featureCentersList.add(Clustering.ClusterEvaluation.optimalCenters(
+					1, x.length, featureExtract, distanceMetric)) ;
+			//add the ith feature's pmf
+			featurePmfList.add(
+					InformationTheory.featurePmf(
+							featureCentersList.get(i), featureExtract[0], distanceMetric));
+			//Get the entropy for the ith feature
+			featureEntropyArray[i] = InformationTheory.entropy(featurePmfList.get(i));
+		}
+		
+		
 		double sum = 0.0;
 		double sum2 = 0.0;
-		double[] featureArray = new double[x.length];
-		double[] featureArray2 = new double[x.length];
-		int[] memberships = Clustering.clusterMembership(centers, x, distanceMetric);
-		double[] clusterPmf = InformationTheory.clusterPmf(memberships, centers.length);
-			
+		double jointEntropy = 0.0;	
 		for (int i=0; i < x[0].length; i++) {
-			featureArray = featurePmf(centers, featureExtractor(x, i),distanceMetric);
-			sum += InformationTheory.mutualInformation(featureArray, clusterPmf, x);
+			//Get joint entropy of f and c
+			
+			//get the feature
+			placeholder = InformationTheory.featureExtractor(x, i);
+			for (int k = 0; k < placeholder.length; k++) {
+				featureExtract[k][0] = placeholder[k];
+			}
+			int[] featureMemberships = Clustering.clusterMembership(
+					featureCentersList.get(i), featureExtract, distanceMetric);
+			jointEntropy = InformationTheory.entropy(InformationTheory.jointPmf(
+					memberships, featureMemberships));
+			//Get the MI(f,c)
+			sum += clusterEntropy + featureEntropyArray[i] - jointEntropy;
 			
 			for (int j = 0; j < x[0].length; j++) {
-				featureArray2 = featureExtractor(x, j);
-				sum2+= InformationTheory.mutualInformation(featureArray, featureArray2, x);
+				placeholder = InformationTheory.featureExtractor(x, j);
+				for (int k = 0; k < placeholder.length; k++) {
+					featureExtract[k][0] = placeholder[k];
+				}
+				int [] featureMemberships2 = Clustering.clusterMembership(
+						featureCentersList.get(j), featureExtract, distanceMetric);
+				jointEntropy = InformationTheory.entropy(InformationTheory.jointPmf(
+						featureMemberships2, featureMemberships));
+				sum2+= featureEntropyArray[i] + featureEntropyArray[j] - jointEntropy;
 			}
 		}
 		return sum / (double) x[0].length - sum2 / (double) Math.pow(x[0].length, 2);
@@ -157,12 +225,14 @@ public class InformationTheory {//TODO use pmf instead of element occurences?
 				}
 			}
 			
-			
 			score = InformationTheory.mRMRHelper(newX, newCenters, distanceMetric);
+			
 			//if score is NaN
 			if (Double.isNaN(score)) {
 				throw new ArithmeticException("score is NaN");
 			}
+			//If the current score is greater than the max, current score and features removed
+			//becomes the new best
 			if(score > max) {
 				bestFeaturesToRemove = featuresToRemove;
 				max = score;

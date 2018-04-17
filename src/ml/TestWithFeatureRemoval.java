@@ -7,8 +7,7 @@ public class TestWithFeatureRemoval {
 	public static void main(String[] args) throws IOException {
 		//TODO: Fix all features being removed AND identify the names of features being removed
 		//TODO: +-1 k using last center values to start
-		//TODO: mRMRHelper returns NaN : go over every damn info theory section
-		//TODO: Max iterations
+		//TODO: use Max iterations for clustering
 		String location = 
 				"C:/Users/K.Ataman/Dropbox (TTS)/TTS Development/Machine Learning/Cpty POC/QT Mar 20";
 		String[] header = {"NUM_CCY_TRADED","AVG_TRADE_SIZE" ,"AVG_TRADE_VOLUME_MNTHLY",
@@ -27,7 +26,7 @@ public class TestWithFeatureRemoval {
 		
 		double score = 0.0;
 		//ensure we get a good score
-		double minScore = 0.38;
+		double minScore = 0.5;
 		int maxIterations = 300;
 		
 		while(score < minScore) {

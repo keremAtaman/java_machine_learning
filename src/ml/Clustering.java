@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
+//TODO check silhouette scoring. Something is fishy there
 //TODO Create a class for clustering methods, and an enum containing each
 //TODO Add methods to use initialCenters properly
 public class Clustering {
@@ -60,7 +60,7 @@ public class Clustering {
 			double score = 0.0;
 			//Get which cluster each element belongs to
 			int[] clusterMemberships = Clustering.clusterMembership(centers, x, distanceMetric);
-			//first index is clusters, second index is elements
+			//first index is clusters, second index is elements, third is the features
 			List<List<double[]>> rearrangedMembers= new ArrayList<List<double[]>>();
 			
 			
@@ -74,14 +74,14 @@ public class Clustering {
 					}
 				}
 				rearrangedMembers.add(clusterMembers);
-				//clusterMembers.clear();
 			}
-			//System.out.println(rearrangedMembers.get(0).get(0).length);
 			//calculate within and inter cluster distances for all elements
+			
 			//within cluster score
 			double SSW = 0.0;
 			//inter cluster score
 			double SSB = 0.0;
+			//calculate the silhouette score of each cluster's each member
 			for (int i = 0; i < rearrangedMembers.size(); i++) {
 				for (int j = 0; j < rearrangedMembers.get(i).size(); j++) {
 					SSW = withinClusterDistance(j, rearrangedMembers.get(i), distanceMetric);
@@ -89,30 +89,33 @@ public class Clustering {
 					score += (SSB - SSW) / Math.max(SSB, SSW);
 				}
 			}
+			//average the score of all elements
 			return score / (double)x.length;
 		}
 		
 		private static double withinClusterDistance(int elementNumber, List<double[]> clusterMembers, Distance.distanceMetric distanceMetric){
 			double score = 0.0;
 			for(int i = 0; i < clusterMembers.size(); i++) {
-				if(i != elementNumber) {
-					score += Distance.calculateDistance(clusterMembers.get(elementNumber), clusterMembers.get(i), distanceMetric);
-				}
+				score += Distance.calculateDistance(clusterMembers.get(elementNumber), clusterMembers.get(i), distanceMetric);
 			}
 			return score / (double)clusterMembers.size();
 		}
 		
 		private static double interClusterDistance(int clusterNumber, int elementNumber, List<List<double[]>> rearrangedMembers, Distance.distanceMetric distanceMetric){
 			double score = 0.0;
+			int numOtherElements = 0;
+			//Go through the clusters
 			for (int i = 0; i < rearrangedMembers.size(); i++) {
 				if (i!= clusterNumber) {
+					//for each element in the cluster...
 					for (int j = 0; j < rearrangedMembers.get(i).size(); j++) {
 						score+= Distance.calculateDistance(rearrangedMembers.get(clusterNumber).get(elementNumber),
 								rearrangedMembers.get(i).get(j), distanceMetric);
+						numOtherElements++;
 					}
 				}
 			}
-			return score / (double)rearrangedMembers.size();
+			return score / (double)(numOtherElements);
 		}
 		/**
 		 * Calculates what is the best number of centers and gives the optimal centers
@@ -124,7 +127,6 @@ public class Clustering {
 		 * @throws IOException
 		 */
 		public static double[][] optimalCenters(int minK, int maxK, double[][] x, Distance.distanceMetric distanceMetric){
-			//TODO: minK can be 1, have multiple clustering methods to be used
 			if (minK >= maxK) {
 				throw new IllegalArgumentException("minK has to be smaller than maxK");
 			}
@@ -139,7 +141,6 @@ public class Clustering {
 				centerList.add(centers);
 				listOfScores[i - minK] = Clustering.ClusterEvaluation.silhouetteMethod(centers, x, distanceMetric);
 			}
-			
 			return centerList.get(elbowMethod(listOfScores));
 		}
 		
@@ -151,6 +152,7 @@ public class Clustering {
 				secondDerivativeList[i] = Math.abs(listOfScores[i+1] + listOfScores[i-1] - 2 * listOfScores[i]);
 				if (secondDerivativeList[i] > maxScore) {
 					maxIndex = i;
+					maxScore = secondDerivativeList[i] ;
 				}
 			}
 			return maxIndex;
@@ -162,6 +164,9 @@ public class Clustering {
 				if (featuresToRemove[i] == true) {
 					numElementsToRemove++;
 				}
+			}
+			if (numElementsToRemove == 0) {
+				return x;
 			}
 			double[][] newX = new double[x.length][x[0].length - numElementsToRemove];
 			int columnsToSkip = 0;
@@ -189,13 +194,17 @@ public class Clustering {
 		 */
 		public static double[][][] clusteringProcess(
 				double[][] x, Distance.distanceMetric distanceMetric){
-			int numElementsToRemove = 0;
+			int numElementsToRemove = -1;
 			//keep iterating until there are no more elements to remove
 			List<double[]> xHolder = new ArrayList<double[]>();
+			List<double[]> centersHolder = new ArrayList<double[]>();
 			for (int i = 0; i < x.length; i++) {
 				xHolder.add(x[i]);
 			}
-			while(true) {
+			//keep iterating until there is no more elements to remove
+			while(numElementsToRemove!= 0) {
+				//reset centers array
+				centersHolder.clear();
 				//create and populate x2
 				double[][] x2 = new double[xHolder.size()][xHolder.get(0).length];
 				for (int i = 0; i < x2.length; i++) {
@@ -204,7 +213,7 @@ public class Clustering {
 					}
 				}
 				
-				//calculate newX, which comes from operating on x2
+				//calculate centers for x2
 				double [][] centers = Clustering.ClusterEvaluation.optimalCenters(
 						2, x2.length, x2, distanceMetric);
 				//check if any elements need to be removed
@@ -221,15 +230,21 @@ public class Clustering {
 				for (int i = 0; i < newX.length; i++) {
 					xHolder.set(i, newX[i]);
 				}
-				//we removed no elements, meaning we reached optimal condition OR there is one feature remaining
-				if (numElementsToRemove == 0) {
-					double[][][] result = new double [2][newX.length + centers.length][centers[0].length];
-					result[0] = centers;
-					result[1] = newX;
-					return result;
+				//do the same for centers
+				for (int i = 0; i < centers.length; i++) {
+					centersHolder.add(centers[i]);
 				}
+				//System.out.println(numElementsToRemove);
 			}
 			
+			double[][][] result = new double [2][xHolder.size()][centersHolder.get(0).length];
+			for (int i = 0; i < centersHolder.size(); i++) {
+				result[0][i] = centersHolder.get(i);
+			}
+			for (int i = 0; i < xHolder.size(); i++) {
+				result[1][i] = xHolder.get(i);
+			}
+			return result;
 		}
 	}
 	
