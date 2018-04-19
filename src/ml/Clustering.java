@@ -6,7 +6,6 @@ import java.util.Iterator;
 import java.util.List;
 //TODO check silhouette scoring. Something is fishy there
 //TODO Create a class for clustering methods, and an enum containing each
-//TODO Add methods to use initialCenters properly
 public class Clustering {
 	
 	public enum clusteringMethods{
@@ -126,7 +125,7 @@ public class Clustering {
 		 * @return
 		 * @throws IOException
 		 */
-		public static double[][] optimalCenters(int minK, int maxK, double[][] x, Distance.distanceMetric distanceMetric){
+		public static double[][] optimalCenters(int minK, int maxK, int maxIterations, double[][] x, Distance.distanceMetric distanceMetric){
 			if (minK >= maxK) {
 				throw new IllegalArgumentException("minK has to be smaller than maxK");
 			}
@@ -137,7 +136,7 @@ public class Clustering {
 			double[] listOfScores = new double[numIterations];
 			List<double[][]> centerList = new ArrayList<double[][]>();
 			for (int i = minK; i < maxK; i++) {
-				double[][] centers = Clustering.kMeans(i, x, null, distanceMetric);
+				double[][] centers = Clustering.kMeans(i, x, null, maxIterations, distanceMetric);
 				centerList.add(centers);
 				listOfScores[i - minK] = Clustering.ClusterEvaluation.silhouetteMethod(centers, x, distanceMetric);
 			}
@@ -192,8 +191,7 @@ public class Clustering {
 		 * @return A 3D array where [0][][] is the centers and [1][][] is the new x array
 		 * @throws IOException
 		 */
-		public static double[][][] clusteringProcess(
-				double[][] x, Distance.distanceMetric distanceMetric){
+		public static double[][][] clusteringProcess(double[][] x, int maxIterations, Distance.distanceMetric distanceMetric){
 			int numElementsToRemove = -1;
 			//keep iterating until there are no more elements to remove
 			List<double[]> xHolder = new ArrayList<double[]>();
@@ -215,9 +213,9 @@ public class Clustering {
 				
 				//calculate centers for x2
 				double [][] centers = Clustering.ClusterEvaluation.optimalCenters(
-						2, x2.length, x2, distanceMetric);
+						2, x2.length, maxIterations, x2, distanceMetric);
 				//check if any elements need to be removed
-				boolean[] featuresToRemove = InformationTheory.mRMR(x2, centers, distanceMetric);
+				boolean[] featuresToRemove = InformationTheory.mRMR(x2, centers, maxIterations, distanceMetric);
 				numElementsToRemove = 0;
 				for (int i = 0; i < featuresToRemove.length; i++) {
 					if (featuresToRemove[i] == true) {
@@ -240,6 +238,9 @@ public class Clustering {
 			double[][][] result = new double [2][xHolder.size()][centersHolder.get(0).length];
 			for (int i = 0; i < centersHolder.size(); i++) {
 				result[0][i] = centersHolder.get(i);
+			}
+			for (int i = centersHolder.size(); i < xHolder.size(); i++) {
+				result[0][i] = null;
 			}
 			for (int i = 0; i < xHolder.size(); i++) {
 				result[1][i] = xHolder.get(i);
@@ -272,6 +273,7 @@ public class Clustering {
 		}
 		return clusterMembers;
 	}
+	
 	
 	private static double[][] initialCenters(int k, double [][] x){
 		//get the min and max of each feature
@@ -308,11 +310,12 @@ public class Clustering {
 	 * @param k number of clusters
 	 * @param x data to be clustered, where rows are entries and columns are features
 	 * @param initialCenters if not empty, gives the initial centers to be used
+	 * @param maxIterations Shows how many iterations to do when clustering unless centers dont change
 	 * @param distanceMetric distance metric to be used when calculating distance
 	 * @return the centers of each cluster
 	 * @throws IOException
 	 */
-	public static double[][] kMeans(int k, double[][] x, double[][] initialCenters, Distance.distanceMetric distanceMetric
+	public static double[][] kMeans(int k, double[][] x, double[][] initialCenters, int maxIterations, Distance.distanceMetric distanceMetric
 			){
 		//error checking
 		if (k < 1) {
@@ -333,7 +336,6 @@ public class Clustering {
 		//holds the centers of last step for comparison
 		double[][] previousCenters = new double[k][x[0].length];
 		
-		boolean terminationCondition = false;
 		//Holds who belongs to which cluster
 		int []clusterMembers = new int[x.length];
 		//holds how many people are there in each cluster
@@ -342,7 +344,7 @@ public class Clustering {
 		double minDistance = 0.0;
 		double distance = 0.0;
 		
-		while(terminationCondition == false) {
+		for(int iteration = 0; iteration < maxIterations; iteration++) {
 			previousCenters = centers;
 			//reset groupMemberCount
 			for (int i=0; i < x.length; i++) {
@@ -390,6 +392,38 @@ public class Clustering {
 		}
 		return centers;
 	}
+	
+	public static List<Integer> clusterMemberList(double[][] centers, double[][] x, Distance.distanceMetric distanceMetric){
+		
+		double minDistance = 0.0;
+		double distance = 0.0;
+		int closestCluster = 0;
+		int [] resultHolder = new int[x.length];
+		List<Integer> result = new ArrayList<Integer>();
+		//for each data point
+		for (int i = 0; i < x.length; i++) {
+			//for each center
+			for (int j = 0; j < centers.length; j++) {
+				if (j==0) {
+					minDistance = Distance.calculateDistance(x[i], centers[j], distanceMetric);
+					closestCluster = 0;
+				}else {
+					if (distance < minDistance) {
+						minDistance = distance;
+						closestCluster = j;
+					}
+				}
+			}
+			resultHolder[i] = closestCluster;
+			
+		}
+		for (int i = 0; i < resultHolder.length; i++) {
+			
+		}
+		//return result;
+	}
+	
+	
 	/**
 	 * INCOMPLETE: NEED TO DO MERGING STEP AND CLEAR OUT TO ENSURE ONLY List <double[]> centers is used
 	 * @param k

@@ -1,13 +1,15 @@
 package ml;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class TestWithFeatureRemoval {
 
 	public static void main(String[] args) throws IOException {
 		//TODO: Fix all features being removed AND identify the names of features being removed
+		//TODO: Fix x is empty bug
 		//TODO: +-1 k using last center values to start
-		//TODO: use Max iterations for clustering
 		String location = 
 				"C:/Users/K.Ataman/Dropbox (TTS)/TTS Development/Machine Learning/Cpty POC/QT Mar 20";
 		String[] header = {"NUM_CCY_TRADED","AVG_TRADE_SIZE" ,"AVG_TRADE_VOLUME_MNTHLY",
@@ -28,10 +30,26 @@ public class TestWithFeatureRemoval {
 		//ensure we get a good score
 		double minScore = 0.5;
 		int maxIterations = 300;
-		
+		List<double[]> centersHolder = new ArrayList<double []>();
 		while(score < minScore) {
-			double[][][] result = Clustering.ClusterEvaluation.clusteringProcess(x, distanceMetric);
-			double [][] centers = result[0];
+			//get the results given the current features
+			double[][][] result = Clustering.ClusterEvaluation.clusteringProcess(x, maxIterations, distanceMetric);
+			
+			//get the centers and store them in a double[][]
+			centersHolder.clear();
+			for (int i = 0; i < result[0].length; i++) {
+				if (result[0][i]!= null) {
+					centersHolder.add(result[0][i]);
+				}
+			}
+			double [][] centers = new double[centersHolder.size()][centersHolder.get(0).length];
+			for (int i = 0; i < centersHolder.size(); i++) {
+				for (int j = 0; j < centersHolder.get(0).length; j++) {
+					centers[i][j] = centersHolder.get(i)[j];
+				}
+			}
+			
+			//calculate result details
 			double[][] newX = result[1];
 			int[] clusterMembership = Clustering.clusterMembership(centers, newX, distanceMetric);
 			

@@ -47,13 +47,13 @@ public class InformationTheory {//TODO use pmf instead of element occurences?
 		return entropy(x) + entropy(y) - jointEntropy(jointPmf);
 	}
 	
-	public static double[][] featureClusters(double[] feature, Distance.distanceMetric distanceMetric){
+	public static double[][] featureClusters(double[] feature, int maxIterations, Distance.distanceMetric distanceMetric){
 		double[][] x = new double[feature.length][1];
 		for (int i = 0; i < feature.length; i++) {
 			x[i][0] = feature[i];
 		}
 		return Clustering.ClusterEvaluation.optimalCenters(
-				2, x.length, x, distanceMetric);
+				2, x.length, maxIterations, x, distanceMetric);
 	}
 	
 	public static double[] featurePmf(double[][] featureCenters, double[] feature, Distance.distanceMetric distanceMetric){
@@ -116,7 +116,7 @@ public class InformationTheory {//TODO use pmf instead of element occurences?
 		return result;
 	}
 	
-	private static double mRMRHelper(double[][] x, double[][] centers, Distance.distanceMetric distanceMetric){
+	private static double mRMRHelper(double[][] x, double[][] centers, int maxIterations, Distance.distanceMetric distanceMetric){
 		//gets the stuff inside max bracket
 		
 		int[] memberships = Clustering.clusterMembership(centers, x, distanceMetric);
@@ -139,7 +139,7 @@ public class InformationTheory {//TODO use pmf instead of element occurences?
 			}
 			//find the centers for feature i
 			featureCentersList.add(Clustering.ClusterEvaluation.optimalCenters(
-					1, x.length, featureExtract, distanceMetric)) ;
+					1, x.length, maxIterations, featureExtract, distanceMetric)) ;
 			//add the ith feature's pmf
 			featurePmfList.add(
 					InformationTheory.featurePmf(
@@ -182,7 +182,7 @@ public class InformationTheory {//TODO use pmf instead of element occurences?
 		return sum / (double) x[0].length - sum2 / (double) Math.pow(x[0].length, 2);
 	}
 
-	public static boolean[] mRMR(double[][] x, double[][] centers, Distance.distanceMetric distanceMetric){
+	public static boolean[] mRMR(double[][] x, double[][] centers, int maxIterations, Distance.distanceMetric distanceMetric){
 		boolean[] featuresToRemove = int2Bool(0, x[0].length);
 		boolean[] bestFeaturesToRemove = new boolean[x[0].length];
 		int counter = 0;
@@ -225,7 +225,7 @@ public class InformationTheory {//TODO use pmf instead of element occurences?
 				}
 			}
 			
-			score = InformationTheory.mRMRHelper(newX, newCenters, distanceMetric);
+			score = InformationTheory.mRMRHelper(newX, newCenters, maxIterations, distanceMetric);
 			
 			//if score is NaN
 			if (Double.isNaN(score)) {
